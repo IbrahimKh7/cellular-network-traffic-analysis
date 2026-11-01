@@ -1,0 +1,54 @@
+import math
+from Zone_splitting_Ibrahim import (
+    network_given_pupulation,
+    active_phone_users_in_city_A,
+    offered_traffic,
+    carried_traffic
+)
+from erlang import blocking_B
+
+# City information
+population = 7_000_000
+N = 700
+Z = 2000
+
+# Calculate offered traffic in Erlangs
+A = active_phone_users_in_city_A(
+    population, 0.7, 0.25, average_call_minutes=0.5
+)
+
+print(f"City offered traffic: {A:.2f} Erlangs")
+
+# Test different buffering distances and blocking rates
+for F in (1, 2):
+    for B in (0.01, 0.001):
+
+        n, k, C, R, z = network_given_pupulation(
+            spectrum_channels_N=N,
+            blocking_rate_B=B,
+            active_phone_users_in_city_A=A,
+            Zone_area_Z=Z,
+            buffering_distance=F
+            
+        )
+
+        U = 4 if F == 1 else 7
+
+        print(f"\n--- F = {F}, Blocking = {B * 100}% ---")
+        print(f"Channels per cell (n): {n}")
+        print(f"Carried traffic per cell (k): {k:.4f} Erlangs")
+        print(f"Number of cells (C): {C}")
+        print(f"Frequency reuse (R): {R:.4f}")
+        print(f"Area per cell (z): {z:.4f} km²")
+        # Verify the results
+        K = carried_traffic(N,B)
+        a = offered_traffic(n,B) 
+        print(f"K Carried traffic in city: {K:.4f}")
+
+        assert n == N // U
+        assert C == math.ceil(A/a)
+        assert math.isclose(R, C / U)
+        assert math.isclose(z, Z / C)
+        assert blocking_B(n,k)<=B
+
+        print("All checks passed!")
